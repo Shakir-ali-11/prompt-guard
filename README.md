@@ -14,7 +14,38 @@ information (PII) in text, with block, redact, and warn policies.
 
 Initial project structure created. Implementation is in progress.
 
+## Running it
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start the API:
+
+```bash
+uvicorn app.main:create_app --factory --reload
+```
+
+Open the interactive API documentation at:
+
+http://127.0.0.1:8000/docs
+
+Use `POST /check` to submit a prompt. The response includes the policy decision,
+detected findings, and the safe-to-forward text when the prompt is not blocked.
+
+## API Demo
+
+A prompt containing an AWS access key is blocked, and the response
+returns `text: null`.
+
+![Prompt Guard blocking an AWS access key](docs_blocked_request.jpg)
+
 ## Known Limitations
+
+- `/events` has no authentication, and `user` is self-declared by the client.
+  A production version would put both behind real auth.
 
 ### Hexadecimal secrets may be missed
 
