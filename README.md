@@ -27,3 +27,22 @@ Another applicable detection rule may still catch them.
 
 Entropy is a heuristic: some harmless strings may be flagged,
 and some secrets may be missed.
+
+## Policy
+
+The policy engine decides what happens after the detector finds sensitive content.
+
+| Action | Meaning |
+|---|---|
+| `allow` | The prompt is sent unchanged. Findings are still reported. |
+| `warn` | The prompt is sent unchanged, but the finding is flagged. |
+| `redact` | Sensitive text is replaced with a placeholder before forwarding. |
+| `block` | The prompt is not forwarded. `Decision.text` is `None`. |
+
+When a prompt contains multiple findings, the strictest action wins.
+For example, an email address (`warn`) plus an AWS access key (`block`)
+causes the entire prompt to be blocked.
+
+A custom policy can override the action for individual rule types.
+For example, `{"email": "block"}` blocks prompts containing email addresses,
+while all other rules keep their default actions.

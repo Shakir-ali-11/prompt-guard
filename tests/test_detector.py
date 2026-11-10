@@ -196,3 +196,7 @@ def test_harmless_hex_reference_is_not_flagged():
     text = f"The public reference ID is {reference}."
 
     assert scan(text) == []    
+
+def test_github_fine_grained_token():
+    token = "github_pat_" + "11ABCDEFG0123456789_" + "abcdefghijklmnopqrstuvwxyz0123456789"
+    assert types(f"token {token}") == ["github_token"]    

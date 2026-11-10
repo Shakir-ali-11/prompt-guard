@@ -16,6 +16,7 @@ class Finding:
 PATTERN_RULES = [
     ("aws_access_key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"), "high"),
     ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}"), "high"),
+    ("github_token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}"), "high"),
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9_\-]{20,}"), "high"),
     (
         "private_key",
