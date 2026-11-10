@@ -28,6 +28,9 @@ Another applicable detection rule may still catch them.
 Entropy is a heuristic: some harmless strings may be flagged,
 and some secrets may be missed.
 
+- Entropy detection only works on strings of 24+ characters, so short secrets
+  (e.g. 16-character TOTP seeds or short passwords) are not detected.
+
 ## Policy
 
 The policy engine decides what happens after the detector finds sensitive content.
