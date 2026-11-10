@@ -27,9 +27,15 @@ PATTERN_RULES = [
     ),
     (
         "email",
-        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+        re.compile(
+            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b(?!:[A-Za-z~/])"
+        ),
         "medium",
     ),
+    # JWT: header and payload are base64url JSON, so both start with "eyJ"
+    ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*"), "high"),
+    ("slack_token", re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}"), "high"),
+    ("stripe_key", re.compile(r"\b[sr]k_(?:live|test)_[A-Za-z0-9]{24,}"), "high"),
     # Phone: international (+92 300 1234567)
     (
         "phone",
@@ -49,11 +55,25 @@ PATTERN_RULES = [
 ]
 
 # 13-19 digits, optionally separated by single spaces or dashes
-CARD_REGEX = re.compile(r"(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)")
+CARD_REGEX = re.compile(r"(?<![\w-])(?:\d[ -]?){12,18}\d(?![\w-])")
 
 # Candidate tokens for the entropy check: 24+ "key-like" characters in a row
 TOKEN_REGEX = re.compile(r"[A-Za-z0-9+/_\-]{24,}")
 ENTROPY_THRESHOLD = 4.0
+# Snake/kebab-case identifiers such as calculate_monthly_revenue_2024_v2
+IDENTIFIER_REGEX = re.compile(r"[a-z0-9]+(?:[_-][a-z0-9]+){2,}")
+
+# Context rules: a keyword, then a separator, then the value
+CONTEXT_KEYWORDS = r"(?:password|passwd|pwd|secret|api_?key|token)\w*"
+CONTEXT_VALUE = r"""["']?([^\s"'()\[\]{},;]{6,})"""
+
+KEYWORD_ASSIGN_REGEX = re.compile(
+    CONTEXT_KEYWORDS + r"\s*[:=]\s*" + CONTEXT_VALUE, re.IGNORECASE
+)
+
+PASSWORD_PHRASE_REGEX = re.compile(
+    r"\b(?:password|passwd)(?:\s+is)?\s+" + CONTEXT_VALUE, re.IGNORECASE
+)
 
 # When two findings overlap, the lower number wins.
 PRIORITY = {
@@ -65,6 +85,10 @@ PRIORITY = {
     "email": 2,
     "phone": 3,
     "high_entropy_string": 4,
+    "generic_secret": 5,
+    "jwt": 1,
+    "slack_token": 1,
+    "stripe_key": 1,
 }
 
 
@@ -97,6 +121,13 @@ def _remove_overlaps(findings: list[Finding]) -> list[Finding]:
     return sorted(kept, key=lambda f: f.start)
 
 
+def _looks_like_secret_value(value: str) -> bool:
+    """Require a letter plus a digit or selected symbol."""
+    has_letter = any(c.isalpha() for c in value)
+    has_digit_or_symbol = any(c.isdigit() or c in "!@#$%^&*" for c in value)
+    return has_letter and has_digit_or_symbol
+
+
 def scan(text: str) -> list[Finding]:
     findings: list[Finding] = []
 
@@ -109,11 +140,23 @@ def scan(text: str) -> list[Finding]:
         if 13 <= len(digits) <= 19 and luhn_valid(digits):
             findings.append(Finding("credit_card", match.start(), match.end(), "high"))
 
+    for regex in (KEYWORD_ASSIGN_REGEX, PASSWORD_PHRASE_REGEX):
+        for match in regex.finditer(text):
+            if _looks_like_secret_value(match.group(1)):
+                findings.append(
+                    Finding("generic_secret", match.start(1), match.end(1), "high")
+                )
+
     for match in TOKEN_REGEX.finditer(text):
         token = match.group()
         has_digit = any(c.isdigit() for c in token)
         has_letter = any(c.isalpha() for c in token)
-        if has_digit and has_letter and shannon_entropy(token) > ENTROPY_THRESHOLD:
+        if (
+            has_digit
+            and has_letter
+            and not IDENTIFIER_REGEX.fullmatch(token)
+            and shannon_entropy(token) > ENTROPY_THRESHOLD
+        ):
             findings.append(
                 Finding("high_entropy_string", match.start(), match.end(), "medium")
             )

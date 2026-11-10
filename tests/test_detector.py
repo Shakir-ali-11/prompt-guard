@@ -203,3 +203,71 @@ def test_github_fine_grained_token():
         "github_pat_" + "11ABCDEFG0123456789_" + "abcdefghijklmnopqrstuvwxyz0123456789"
     )
     assert types(f"token {token}") == ["github_token"]
+
+
+def test_password_with_colon():
+    text = "password: Tr0ub4dor&3"
+    assert types(text) == ["generic_secret"]
+    f = scan(text)[0]
+    assert text[f.start : f.end] == "Tr0ub4dor&3"
+
+
+def test_quoted_password_excludes_quotes():
+    text = "db_password = 'S3cretPass!'"
+    f = scan(text)[0]
+    assert text[f.start : f.end] == "S3cretPass!"
+
+
+def test_password_phrase_without_separator():
+    assert types("my password is Summer2024!") == ["generic_secret"]
+
+
+def test_ordinary_use_of_word_password_not_flagged():
+    assert types("How do I reset my password?") == []
+    assert types("password reset email") == []
+    assert types("password management policy") == []
+
+
+def test_env_var_lookup_not_flagged():
+    assert types("api_key = os.environ['OPENAI_API_KEY']") == []
+
+
+def test_numeric_setting_not_flagged():
+    assert types("max_tokens = 100000") == []
+
+
+def test_ssh_git_url_not_flagged_as_email():
+    assert types("git clone git@github.com:acme/repo.git") == []
+
+
+def test_email_followed_by_colon_and_space_still_flagged():
+    assert types("write to ali@example.com: thanks") == ["email"]
+
+
+def test_snake_case_identifier_not_flagged():
+    assert types("def calculate_monthly_revenue_forecast_2024_v2(data):") == []
+
+
+def test_mixed_case_secret_with_underscores_still_flagged():
+    token = "Tq8xLm2V_n7Rb4Zc9Yd3_Kp6Wf1Hs5JgA0"
+    assert types("x " + token) == ["high_entropy_string"]
+
+JWT = "eyJhbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjM0NTY3ODkwIn0" + "." + "abcDEF123_-xyzABC456"
+
+
+def test_jwt():
+    assert types("Authorization: Bearer " + JWT) == ["jwt"]
+
+
+def test_stripe_key():
+    key = "sk_live_" + "Tq8xLm2Vn7Rb4Zc9Yd3Kp6Wf"
+    assert types("STRIPE_SECRET_KEY=" + key) == ["stripe_key"]
+
+
+def test_slack_token_digits_not_flagged_as_card():
+    token = "xoxb-" + "1234567890-" + "1234567890123-" + "AbCdEfGhIjKlMnOpQrStUvWx"
+    assert types("SLACK_BOT_TOKEN=" + token) == ["slack_token"]
+
+
+def test_word_ending_in_sk_not_flagged_as_stripe():
+    assert types("risk_live_dashboard_configuration") == []

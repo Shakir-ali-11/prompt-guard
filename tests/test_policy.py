@@ -1,7 +1,7 @@
 import pytest
 
-from app.detector import Finding
-from app.policy import evaluate, redact
+from app.detector import PRIORITY, Finding
+from app.policy import DEFAULT_POLICY, evaluate, redact
 
 AWS_SECRET = "wJalrXUtnFEMI/K7MDENG/" + "bPxRfiCYEXAMPLEKEY"
 
@@ -93,8 +93,10 @@ def test_policy_overrides_do_not_change_detection():
     assert len(d.findings) == 2
 
 
-def test_short_secret_is_not_detected():
-    assert evaluate("secret=JBSWY3DPEHPK3PXP").action == "allow"
+def test_short_secret_with_context_is_redacted():
+    d = evaluate("secret=JBSWY3DPEHPK3PXP")
+    assert d.action == "redact"
+    assert d.text == "secret=[REDACTED:generic_secret]"
 
 
 def test_github_token_and_card_blocks_prompt():
@@ -104,3 +106,6 @@ def test_github_token_and_card_blocks_prompt():
     d = evaluate(f"{token} card 4111 1111 1111 1111")
     assert d.action == "block"
     assert d.text is None
+
+def test_every_rule_has_a_priority_and_a_default_action():
+    assert set(PRIORITY) == set(DEFAULT_POLICY)

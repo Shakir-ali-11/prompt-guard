@@ -14,6 +14,10 @@ DEFAULT_POLICY = {
     "email": "warn",
     "phone": "warn",
     "high_entropy_string": "warn",
+    "generic_secret": "redact",
+    "jwt": "block",
+    "slack_token": "block",
+    "stripe_key": "block",
 }
 
 
