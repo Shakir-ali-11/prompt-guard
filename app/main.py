@@ -39,10 +39,9 @@ def create_app(
     def health():
         return {"status": "ok"}
 
-
     @app.get("/", include_in_schema=False)
     def root():
-        return {"service": "Prompt Guard", "docs": "/docs"}    
+        return {"service": "Prompt Guard", "docs": "/docs"}
 
     @app.post("/check", response_model=CheckResponse)
     def check(req: CheckRequest):

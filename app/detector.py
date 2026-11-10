@@ -20,14 +20,22 @@ PATTERN_RULES = [
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9_\-]{20,}"), "high"),
     (
         "private_key",
-        re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY(?: BLOCK)?-----"),
+        re.compile(
+            r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY(?: BLOCK)?-----"
+        ),
         "high",
     ),
-    ("email", re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"), "medium"),
+    (
+        "email",
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+        "medium",
+    ),
     # Phone: international (+92 300 1234567)
     (
         "phone",
-        re.compile(r"(?<![\w+])\+\d{1,3}[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}(?!\d)"),
+        re.compile(
+            r"(?<![\w+])\+\d{1,3}[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}(?!\d)"
+        ),
         "medium",
     ),
     # Phone: Pakistani local (0300-1234567)
@@ -106,6 +114,8 @@ def scan(text: str) -> list[Finding]:
         has_digit = any(c.isdigit() for c in token)
         has_letter = any(c.isalpha() for c in token)
         if has_digit and has_letter and shannon_entropy(token) > ENTROPY_THRESHOLD:
-            findings.append(Finding("high_entropy_string", match.start(), match.end(), "medium"))
+            findings.append(
+                Finding("high_entropy_string", match.start(), match.end(), "medium")
+            )
 
     return _remove_overlaps(findings)

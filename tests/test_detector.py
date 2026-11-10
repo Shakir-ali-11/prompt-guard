@@ -1,4 +1,4 @@
-from app.detector import scan, luhn_valid, shannon_entropy
+from app.detector import luhn_valid, scan, shannon_entropy
 
 # Fake secrets are built by concatenation so GitHub's secret scanner
 # doesn't block your push.
@@ -49,12 +49,13 @@ def test_clean_text():
 def test_positions_are_correct():
     text = "key=AKIAIOSFODNN7EXAMPLE"
     f = scan(text)[0]
-    assert text[f.start:f.end] == "AKIAIOSFODNN7EXAMPLE"
+    assert text[f.start : f.end] == "AKIAIOSFODNN7EXAMPLE"
 
 
 def test_luhn():
     assert luhn_valid("4111111111111111")
     assert not luhn_valid("4111111111111112")
+
 
 def test_two_secrets_in_one_string():
     text = f"github={FAKE_GITHUB} openai={FAKE_OPENAI}"
@@ -106,6 +107,7 @@ def test_findings_follow_text_order():
     ]
     assert findings[0].start < findings[1].start
 
+
 # AWS's documented example secret, split so secret scanners don't complain
 AWS_SECRET = "wJalrXUtnFEMI/K7MDENG/" + "bPxRfiCYEXAMPLEKEY"
 
@@ -122,7 +124,7 @@ def test_high_entropy_secret_is_flagged():
     text = "secret=" + AWS_SECRET
     assert types(text) == ["high_entropy_string"]
     f = scan(text)[0]
-    assert text[f.start:f.end] == AWS_SECRET
+    assert text[f.start : f.end] == AWS_SECRET
 
 
 def test_git_hash_not_flagged():
@@ -152,13 +154,14 @@ def test_short_number_not_phone():
 def test_card_not_reported_as_phone():
     assert types("card 4111 1111 1111 1111") == ["credit_card"]
 
+
 def test_phone_with_sentence_punctuation():
     text = "Call +92 300 1234567."
     findings = scan(text)
 
     assert len(findings) == 1
     assert findings[0].type == "phone"
-    assert text[findings[0].start:findings[0].end] == "+92 300 1234567"
+    assert text[findings[0].start : findings[0].end] == "+92 300 1234567"
 
 
 def test_phone_and_email_together():
@@ -167,10 +170,7 @@ def test_phone_and_email_together():
 
     assert [finding.type for finding in findings] == ["phone", "email"]
 
-    matched_text = [
-        text[finding.start:finding.end]
-        for finding in findings
-    ]
+    matched_text = [text[finding.start : finding.end] for finding in findings]
     assert matched_text == ["0300-1234567", "shakir@example.com"]
 
 
@@ -181,7 +181,7 @@ def test_github_token_reported_only_once():
 
     assert len(findings) == 1
     assert findings[0].type == "github_token"
-    assert text[findings[0].start:findings[0].end] == token
+    assert text[findings[0].start : findings[0].end] == token
 
 
 def test_invalid_luhn_number_is_not_flagged():
@@ -195,8 +195,11 @@ def test_harmless_hex_reference_is_not_flagged():
     reference = "0123456789abcdef" * 2
     text = f"The public reference ID is {reference}."
 
-    assert scan(text) == []    
+    assert scan(text) == []
+
 
 def test_github_fine_grained_token():
-    token = "github_pat_" + "11ABCDEFG0123456789_" + "abcdefghijklmnopqrstuvwxyz0123456789"
-    assert types(f"token {token}") == ["github_token"]    
+    token = (
+        "github_pat_" + "11ABCDEFG0123456789_" + "abcdefghijklmnopqrstuvwxyz0123456789"
+    )
+    assert types(f"token {token}") == ["github_token"]

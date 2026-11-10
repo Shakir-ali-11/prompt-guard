@@ -1,6 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.policy import Decision
 
@@ -38,7 +38,7 @@ def log_decision(db_path: str, user: str, decision: Decision) -> None:
     """One row per finding. Stores the rule and position, never the text itself."""
     if not decision.findings:
         return
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     rows = [
         (now, user, decision.action, f.type, f.severity, f.start, f.end)
         for f in decision.findings

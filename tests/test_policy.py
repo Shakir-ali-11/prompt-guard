@@ -3,7 +3,6 @@ import pytest
 from app.detector import Finding
 from app.policy import evaluate, redact
 
-
 AWS_SECRET = "wJalrXUtnFEMI/K7MDENG/" + "bPxRfiCYEXAMPLEKEY"
 
 

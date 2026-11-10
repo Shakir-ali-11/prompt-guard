@@ -23,7 +23,9 @@ def test_health(client):
 
 
 def test_clean_prompt_is_allowed(client):
-    r = client.post("/check", json={"user": "shakir", "text": "How do I reverse a list?"})
+    r = client.post(
+        "/check", json={"user": "shakir", "text": "How do I reverse a list?"}
+    )
     assert r.status_code == 200
     body = r.json()
     assert body["action"] == "allow"
@@ -115,11 +117,15 @@ def test_events_limit_zero_returns_422(client):
 def test_two_findings_create_two_rows(client):
     client.post(
         "/check",
-        json={
-            "text": "mail shakir@example.com call me at +92 300 1234567"
-        },
+        json={"text": "mail shakir@example.com call me at +92 300 1234567"},
     )
     events = client.get("/events").json()
     assert len(events) == 2
     rules = {event["rule"] for event in events}
-    assert rules == {"email", "phone"}    
+    assert rules == {"email", "phone"}
+
+
+def test_root_points_to_docs(client):
+    r = client.get("/")
+    assert r.status_code == 200
+    assert r.json()["docs"] == "/docs"
